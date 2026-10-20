@@ -64,13 +64,19 @@
 <section id="problem">
   <h2>1.&nbsp;&nbsp;How should models continually learn from new data?</h2>
   <p>
-    SFT on heavily post-trained models often forgets and fails to generalize, so many works
-    try to make the data more <span class="hl-on">on-policy</span>, e.g., on-policy
-    self-distillation (OPSD), Pedagogical RL, and SFT with sampling. In practice, it is hard
-    to balance on-policyness and data quality, while the data that carry new knowledge or
-    capabilities are usually <span class="hl-off">off-policy</span>: new facts after the
-    pretraining cutoff, expert demonstrations, and synthetic data for self-improvement.
-    What if on-policy training is not necessary?
+    A long-standing goal of AI is a model that continually learns and improves itself.
+    Today's models are heavily post-trained with RL, and the simplest way to teach them
+    something new is supervised finetuning (SFT) on the new data. But SFT on such models
+    often forgets and fails to generalize, so the conventional wisdom is that continual
+    learning needs <span class="hl-on">on-policy</span> training, and many works try to
+    make the data more on-policy, e.g., on-policy self-distillation (OPSD), Pedagogical RL,
+    and SFT with sampling.
+  </p>
+  <p>
+    In practice, it is hard to balance on-policyness and data quality, while the data that
+    carry new knowledge or capabilities are usually <span class="hl-off">off-policy</span>:
+    new facts after the pretraining cutoff, expert demonstrations, and synthetic data for
+    self-improvement. What if on-policy training is not necessary?
   </p>
 </section>
 
