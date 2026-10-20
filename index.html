@@ -153,11 +153,33 @@
 <section id="results">
   <h2>4.&nbsp;&nbsp;Results</h2>
   <p>
-    Across distillation from expert traces, self-improvement with Pedagogical RL, and
-    knowledge injection, grafting beats both SFT and OPSD on new and old tasks, without
-    expensive on-policy sampling. We assume access only to the data, not to the weights or
-    logits of a stronger teacher. New-task performance is measured on held-out data from
-    the new task; old-task performance is the mean over AIME 2024, AIME 2025 and HMMT 2025.
+    We study settings where off-policy data arises naturally. For math, the question is
+    where the thinking traces come from, and we study three sources:
+  </p>
+  <ul>
+    <li><strong>Distillation from expert traces.</strong> On hard problems the model cannot
+      solve, the only way to learn is from a stronger model, so we use traces written by
+      DeepSeek-V4-Pro.</li>
+    <li><strong>Self-improvement with STaR.</strong> Without a stronger model, the model can
+      still learn from its own successes: we rejection-sample its attempts and keep one
+      verified trace per solved problem. This requires that the model can solve the problem
+      with a large budget.</li>
+    <li><strong>Self-improvement with Pedagogical RL.</strong> Solutions from humans or
+      expert systems rarely come with thinking traces. Pedagogical RL trains a copy of the
+      model that sees the reference solution to write thinking traces the model can learn
+      from, so the model self-improves from solutions alone.</li>
+  </ul>
+  <p>
+    For <strong>knowledge injection</strong>, the new data are facts absent from prior
+    training, as for any fact after the pretraining cutoff. We use invented entities so
+    that no fact can leak from pretraining, and the question-answer form is far from how a
+    reasoning model writes.
+  </p>
+  <p>
+    In all settings, we assume access only to the data, not to the weights or logits of a
+    stronger teacher, so on-policy distillation from a teacher is not possible. New-task
+    performance is measured on held-out data from the new task; old-task performance is
+    the mean over AIME 2024, AIME 2025 and HMMT 2025.
   </p>
 
   <h3>Distillation from expert traces</h3>
@@ -176,6 +198,17 @@
   <figure style="margin-top:0.4rem">
     <figcaption>
       <strong>Qwen3-8B, thinking (left) and instruct (right).</strong>
+    </figcaption>
+  </figure>
+
+  <h3>Self-improvement with STaR</h3>
+  <figure class="medium">
+    <img src="figures/fig_star_1p7b.png" alt="Self-improvement with rejection sampling (STaR) on Qwen3-1.7B." />
+    <figcaption>
+      <strong>Qwen3-1.7B (thinking)</strong> learning its own rejection-sampled traces, up
+      to 32 attempts per problem and one verified trace per solved problem. New-task
+      performance matches SFT (the original STaR), and old-task performance rises about
+      eight points above it.
     </figcaption>
   </figure>
 
