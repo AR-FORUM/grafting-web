@@ -1,0 +1,281 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Off-Policy Merging Beats On-Policy Self-Distillation for Continual Learning</title>
+<meta name="description" content="Grafting: learn the update on an earlier donor checkpoint, scale it, optionally mask sensitive directions, and graft it onto the post-trained model. Off-policy, and better than on-policy self-distillation on new and old tasks." />
+
+<!-- Open Graph (Facebook / LinkedIn / Slack / Discord / iMessage previews) -->
+<meta property="og:title" content="Off-Policy Merging Beats On-Policy Self-Distillation for Continual Learning" />
+<meta property="og:description" content="Grafting learns the update on an earlier donor checkpoint, scales it, and applies it to the post-trained model. It beats SFT and on-policy self-distillation on new and old tasks, with no on-policy sampling." />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://ar-forum.github.io/grafting-webpage/" />
+<meta property="og:image" content="https://ar-forum.github.io/grafting-webpage/figures/teaser.png" />
+<meta property="og:image:alt" content="Model merging and grafting vs SFT and OPSD on Qwen3-1.7B, and the best donor checkpoint on OLMo-3." />
+
+<!-- Twitter card -->
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="Off-Policy Merging Beats On-Policy Self-Distillation for Continual Learning" />
+<meta name="twitter:description" content="Grafting: learn the update on an earlier donor checkpoint, scale it, graft it on. Beats on-policy self-distillation on new and old tasks, 10x faster to train." />
+<meta name="twitter:image" content="https://ar-forum.github.io/grafting-webpage/figures/teaser.png" />
+
+<link rel="icon" type="image/svg+xml" href="favicon.svg" />
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+<main class="content">
+
+<header class="paper-header">
+  <h1><span class="hl-off">Off-Policy</span> Merging Beats <span class="hl-on">On-Policy</span><br/>Self-Distillation for Continual Learning</h1>
+  <p class="authors">
+    Chen Henry Wu
+    &nbsp;&middot;&nbsp;
+    Thomas Zhang
+    &nbsp;&middot;&nbsp;
+    Aditi Raghunathan
+  </p>
+  <p class="affiliation">Carnegie Mellon University</p>
+  <p class="meta">October 2026</p>
+  <p class="links">
+    <a href="https://arxiv.org/abs/2610.05872" target="_blank" rel="noopener noreferrer">paper</a> &middot;
+    <a href="https://github.com/ar-forum/grafting" target="_blank" rel="noopener noreferrer">code</a> &middot;
+    <a href="#cite">bibtex</a>
+  </p>
+</header>
+
+<figure class="hero">
+  <img src="figures/teaser.png" alt="Left: SFT, OPSD and grafting on Qwen3-1.7B (thinking), new-task vs old-task performance. Right: grafting from OLMo-3 donors along pretraining." />
+</figure>
+
+<section class="tldr">
+  <h2>Abstract</h2>
+  <p>
+    A long-standing goal of AI is a model that can continually learn and improve itself. On
+    post-trained models, supervised finetuning (SFT) on new data often causes poor
+    generalization and catastrophic forgetting. As such, the conventional wisdom is that
+    <em>on-policy</em> training is a prerequisite for continual learning. In practice,
+    however, data containing new knowledge or capabilities are often <em>off-policy</em>.
+    While methods such as on-policy self-distillation (OPSD) try to bridge this gap by
+    converting off-policy data into on-policy signal, they have been shown to cause
+    reasoning collapse. In this paper, we show that <em>off-policy merging beats OPSD for
+    continual learning</em>. We first show that SFT learns a useful signal from new data,
+    but naively applying its update interferes with existing capabilities. We reduce this
+    interference with a simple recipe we term <strong>grafting</strong>, which changes
+    where the update is learned and how it is applied: (1) learning the update on an
+    earlier <strong>donor checkpoint</strong>, ideally even before the end of
+    <em>pretraining</em>, and applying the weight update to the post-trained model;
+    (2) <strong>scaling</strong> the weight update, equivalent to a form of model merging;
+    and (3) optionally, <strong>masking</strong> the most sensitive update directions when
+    the new data distribution is far from the post-trained model. Across continual
+    learning settings including (1) distilling from expert traces, (2) self-improvement
+    with STaR and Pedagogical RL, and (3) injecting knowledge after pretraining cutoff,
+    grafting Pareto-dominates both SFT and OPSD in new-task and old-task performance,
+    while avoiding expensive on-policy sampling. Therefore, our work challenges on-policy
+    training as a necessity for continual learning on RL-trained models.
+  </p>
+</section>
+
+<nav class="toc">
+  <h2>Contents</h2>
+  <ol>
+    <li><a href="#problem">How should models continually learn from new data?</a></li>
+    <li><a href="#merging">Off-policy training works, if done right</a></li>
+    <li><a href="#interference">Where does interference come from?</a></li>
+    <li><a href="#grafting">Grafting</a></li>
+    <li><a href="#donor">Which donor model?</a></li>
+    <li><a href="#results">Results</a></li>
+    <li><a href="#takeaways">Takeaways</a></li>
+  </ol>
+</nav>
+
+<section id="problem">
+  <h2>1.&nbsp;&nbsp;How should models continually learn from new data?</h2>
+  <p>
+    SFT on heavily post-trained models often forgets and fails to generalize, so many works
+    try to make the data more <span class="hl-on">on-policy</span>, e.g., on-policy
+    self-distillation (OPSD), Pedagogical RL, and SFT with sampling. In practice, it is hard
+    to balance on-policyness and data quality, while the data that carry new knowledge or
+    capabilities are usually <span class="hl-off">off-policy</span>: new facts after the
+    pretraining cutoff, expert demonstrations, and synthetic data for self-improvement.
+    What if on-policy training is not necessary?
+  </p>
+</section>
+
+<section id="merging">
+  <h2>2.&nbsp;&nbsp;Off-policy training works, if done right</h2>
+  <p>
+    Our premise is that simply merging the SFT model back toward the original post-trained
+    model, &theta;<sub>merge</sub> = (1 &minus; &lambda;) &theta;<sub>post</sub> + &lambda; &theta;&prime;<sub>post</sub>,
+    makes SFT a strong baseline. Without merging, neither SFT nor OPSD beats the
+    post-trained model. With merging, SFT generalizes much better, and OPSD loses its edge
+    over SFT despite its expensive on-policy sampling.
+  </p>
+  <p>
+    Merging only scales the update down without changing its direction, so SFT was
+    learning something useful. It hurts because it interferes with existing capabilities.
+  </p>
+  <figure>
+    <img src="figures/fig_scaling_1p7b.png" alt="Learning-rate sweep without merging (left) and merging-scale sweep (right) for SFT, OPSD and grafting on Qwen3-1.7B." />
+    <figcaption>
+      <strong>Model merging improves both old and new task performance</strong> on
+      Qwen3-1.7B (thinking). <em>(Left)</em> Without merging, neither SFT nor OPSD
+      outperforms the post-trained model. <em>(Right)</em> Sweeping the merging scale
+      improves generalization for every method.
+    </figcaption>
+  </figure>
+</section>
+
+<section id="interference">
+  <h2>3.&nbsp;&nbsp;Where does interference come from?</h2>
+  <p>
+    Training on narrow distributions (e.g., post-training, or even late pretraining) skews
+    which task a model infers its inputs to come from. So finetuning later checkpoints
+    routes more of the new learning signal to the parameters that support existing
+    capabilities. This suggests learning the update on an <em>earlier</em> checkpoint
+    instead. But how?
+  </p>
+</section>
+
+<section id="grafting">
+  <h2>4.&nbsp;&nbsp;Grafting</h2>
+  <p>
+    Task arithmetic (Ilharco et al., 2023) shows that an update need not be derived from
+    the model it is applied to. Based on this, we change <em>where</em> the update is
+    learned and <em>how</em> it is applied. We call the method <strong>grafting</strong>:
+  </p>
+  <ol>
+    <li>learn the update on an earlier <em>donor model</em> &theta;<sub>donor</sub>;</li>
+    <li>scale the weight update by &lambda; and apply it to the post-trained model;</li>
+    <li>optionally, mask the most sensitive weight directions (estimated with the Fisher
+      information on old-task data) when the new data distribution is far from the
+      post-trained model.</li>
+  </ol>
+  <p class="formula">&theta;(&lambda;, &rho;) = &theta;<sub>post</sub> + &lambda; &middot; M<sub>&rho;</sub> &#8857; (&theta;<sub>donor-ft</sub> &minus; &theta;<sub>donor</sub>)</p>
+  <p>
+    Here &theta;<sub>donor-ft</sub> is the donor after finetuning on the new data, and the
+    mask M<sub>&rho;</sub> zeroes the top-&rho; fraction of Fisher-weighted directions of
+    the update. Masking as few as &rho; &le; 1% of directions is enough.
+  </p>
+</section>
+
+<section id="donor">
+  <h2>5.&nbsp;&nbsp;Which donor model?</h2>
+  <p>
+    We want a donor that is early enough to see less interference, but late enough to stay
+    close to the final model. OLMo-3 releases many intermediate checkpoints, which lets us
+    study this. Each post-training stage (SFT, DPO, RL) makes the model harder to finetune,
+    and the best donor sits before the end of pretraining.
+  </p>
+  <div class="fig-pair">
+    <img src="figures/fig_olmo_atlas.png" alt="Grafting from base, SFT and DPO checkpoints of OLMo-3 vs direct SFT." />
+    <img src="figures/fig_olmo_ladder.png" alt="Grafting from OLMo-3 pretraining checkpoints up to 12k steps before the base model." />
+  </div>
+  <figure style="margin-top:0.4rem">
+    <figcaption>
+      <strong>Grafting from different donors with OLMo-3-7B (thinking).</strong>
+      <em>(Left)</em> The donor moves along post-training: base &rarr; SFT &rarr; DPO
+      &rarr; RL. <em>(Right)</em> The donor moves back along pretraining, up to 12k steps
+      before the base model.
+    </figcaption>
+  </figure>
+</section>
+
+<section id="results">
+  <h2>6.&nbsp;&nbsp;Results</h2>
+  <p>
+    Across distillation from expert traces, self-improvement with Pedagogical RL, and
+    knowledge injection, grafting beats both SFT and OPSD on new and old tasks, without
+    expensive on-policy sampling. We assume access only to the data, not to the weights or
+    logits of a stronger teacher. New-task performance is measured on held-out data from
+    the new task; old-task performance is the mean over AIME 2024, AIME 2025 and HMMT 2025.
+  </p>
+
+  <h3>Distillation from expert traces</h3>
+  <figure>
+    <img src="figures/fig_atlas_1p7b.png" alt="Qwen3-1.7B thinking: SFT, OPSD and grafting at pass@1, pass@4 and pass@8." />
+    <figcaption>
+      <strong>Qwen3-1.7B (thinking)</strong> on hard math problems the model cannot solve,
+      with teacher traces from DeepSeek-V4-Pro. Grafting dominates SFT and OPSD at pass@1,
+      pass@4 and pass@8.
+    </figcaption>
+  </figure>
+  <div class="fig-pair">
+    <img src="figures/fig_atlas_8b.png" alt="Qwen3-8B thinking results." />
+    <img src="figures/fig_atlas_8b_nt.png" alt="Qwen3-8B instruct results." />
+  </div>
+  <figure style="margin-top:0.4rem">
+    <figcaption>
+      <strong>Qwen3-8B, thinking (left) and instruct (right).</strong>
+    </figcaption>
+  </figure>
+
+  <h3>Self-improvement with Pedagogical RL</h3>
+  <figure class="medium">
+    <img src="figures/fig_pedrl_1p7b.png" alt="Self-improvement with Pedagogical RL on Qwen3-1.7B." />
+    <figcaption>
+      <strong>Qwen3-1.7B (thinking).</strong> A copy of the model that sees the reference
+      solution is trained with RL to write thinking traces the model can learn from. Learning
+      these traces with grafting instead of SFT improves both new-task and old-task
+      performance.
+    </figcaption>
+  </figure>
+
+  <h3>Knowledge injection</h3>
+  <figure class="medium">
+    <img src="figures/fig_knowledge.png" alt="Knowledge injection results for SFT, OPSD and grafting." />
+    <figcaption>
+      <strong>Qwen3-1.7B (thinking)</strong> learning 1,125 facts about 200 invented
+      entities, evaluated on held-out paraphrases. Grafting learns nearly all the facts
+      while keeping old-task performance at or above the post-trained model; SFT forgets,
+      and OPSD learns less.
+    </figcaption>
+  </figure>
+</section>
+
+<section id="takeaways">
+  <h2>7.&nbsp;&nbsp;Takeaways</h2>
+  <p>
+    Together, our results suggest that on-policyness is not a necessity for continual
+    learning. Since continual learning applications often involve off-policy experiences,
+    we hope our work inspires more effort on making off-policy training generalize better.
+  </p>
+</section>
+
+<!-- =========================== CITATION ========================== -->
+<footer id="cite" class="citation">
+  <h2>Citation</h2>
+  <div class="bibtex-wrap">
+    <button class="copy-btn" type="button" data-copy-target="bibtex"
+            aria-label="Copy BibTeX to clipboard">copy</button>
+<pre id="bibtex"><code>@article{wu2026grafting,
+  title   = {Off-Policy Merging Beats On-Policy Self-Distillation for Continual Learning},
+  author  = {Wu, Chen Henry and Zhang, Thomas and Raghunathan, Aditi},
+  journal = {arXiv preprint arXiv:2610.05872},
+  year    = {2026},
+}</code></pre>
+  </div>
+</footer>
+
+</main>
+
+<script>
+  document.querySelectorAll(".copy-btn").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      var target = document.getElementById(btn.dataset.copyTarget);
+      if (!target) return;
+      var text = target.textContent.trim();
+      navigator.clipboard.writeText(text).then(function () {
+        var orig = btn.textContent;
+        btn.textContent = "copied";
+        btn.classList.add("is-copied");
+        setTimeout(function () {
+          btn.textContent = orig;
+          btn.classList.remove("is-copied");
+        }, 1400);
+      });
+    });
+  });
+</script>
+</body>
+</html>
