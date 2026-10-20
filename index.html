@@ -52,7 +52,7 @@
   <h2>Contents</h2>
   <ol>
     <li><a href="#problem">Off-policy = forgetting?</a></li>
-    <li><a href="#merging">Off-policy training works, if done right</a></li>
+    <li><a href="#merging">Model merging alone mitigates forgetting</a></li>
     <li><a href="#grafting">Grafting</a></li>
     <li><a href="#donor">Which donor model?</a></li>
     <li><a href="#results">Results</a></li>
@@ -80,7 +80,7 @@
 </section>
 
 <section id="merging">
-  <h2>2.&nbsp;&nbsp;Off-policy training works, if done right</h2>
+  <h2>2.&nbsp;&nbsp;Model merging alone mitigates forgetting</h2>
   <p>
     Our premise is that simply merging the SFT model back toward the original post-trained
     model, &theta;<sub>merge</sub> = (1 &minus; &lambda;) &theta;<sub>post</sub> + &lambda; &theta;&prime;<sub>post</sub>,
@@ -97,6 +97,10 @@
       improves generalization for every method.
     </figcaption>
   </figure>
+</section>
+
+<section id="grafting">
+  <h2>3.&nbsp;&nbsp;Grafting</h2>
   <p>
     Merging only scales the update down without changing its direction, so SFT was
     learning something useful. It hurts because it interferes with existing capabilities.
@@ -108,10 +112,6 @@
     the parameters that support existing capabilities. This suggests learning the update
     on an <em>earlier</em> checkpoint instead. But how?
   </p>
-</section>
-
-<section id="grafting">
-  <h2>3.&nbsp;&nbsp;Grafting</h2>
   <p>
     Task arithmetic (Ilharco et al., 2023) shows that an update need not be derived from
     the model it is applied to. Based on this, we change <em>where</em> the update is
