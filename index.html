@@ -54,7 +54,6 @@
     <li><a href="#problem">Off-policy = forgetting?</a></li>
     <li><a href="#merging">Model merging alone mitigates forgetting</a></li>
     <li><a href="#grafting">Grafting</a></li>
-    <li><a href="#donor">Which donor model?</a></li>
     <li><a href="#results">Results</a></li>
     <li><a href="#takeaways">Takeaways</a></li>
   </ol>
@@ -130,10 +129,7 @@
     mask M<sub>&rho;</sub> zeroes the top-&rho; fraction of Fisher-weighted directions of
     the update. Masking as few as &rho; &le; 1% of directions is enough.
   </p>
-</section>
-
-<section id="donor">
-  <h2>4.&nbsp;&nbsp;Which donor model?</h2>
+  <h3 id="donor">Which donor model?</h3>
   <p>
     We want a donor that is early enough to see less interference, but late enough to stay
     close to the final model. OLMo-3 releases many intermediate checkpoints, which lets us
@@ -155,7 +151,7 @@
 </section>
 
 <section id="results">
-  <h2>5.&nbsp;&nbsp;Results</h2>
+  <h2>4.&nbsp;&nbsp;Results</h2>
   <p>
     Across distillation from expert traces, self-improvement with Pedagogical RL, and
     knowledge injection, grafting beats both SFT and OPSD on new and old tasks, without
@@ -207,7 +203,7 @@
 </section>
 
 <section id="takeaways">
-  <h2>6.&nbsp;&nbsp;Takeaways</h2>
+  <h2>5.&nbsp;&nbsp;Takeaways</h2>
   <p>
     Together, our results suggest that on-policyness is not a necessity for continual
     learning. Since continual learning applications often involve off-policy experiences,
