@@ -53,7 +53,6 @@
   <ol>
     <li><a href="#problem">Off-policy = forgetting?</a></li>
     <li><a href="#merging">Off-policy training works, if done right</a></li>
-    <li><a href="#interference">Where does interference come from?</a></li>
     <li><a href="#grafting">Grafting</a></li>
     <li><a href="#donor">Which donor model?</a></li>
     <li><a href="#results">Results</a></li>
@@ -89,10 +88,6 @@
     post-trained model. With merging, SFT generalizes much better, and OPSD loses its edge
     over SFT despite its expensive on-policy sampling.
   </p>
-  <p>
-    Merging only scales the update down without changing its direction, so SFT was
-    learning something useful. It hurts because it interferes with existing capabilities.
-  </p>
   <figure>
     <img src="figures/fig_scaling_1p7b.png" alt="Learning-rate sweep without merging (left) and merging-scale sweep (right) for SFT, OPSD and grafting on Qwen3-1.7B." />
     <figcaption>
@@ -102,21 +97,21 @@
       improves generalization for every method.
     </figcaption>
   </figure>
-</section>
-
-<section id="interference">
-  <h2>3.&nbsp;&nbsp;Where does interference come from?</h2>
   <p>
-    Training on narrow distributions (e.g., post-training, or even late pretraining) skews
-    which task a model infers its inputs to come from. So finetuning later checkpoints
-    routes more of the new learning signal to the parameters that support existing
-    capabilities. This suggests learning the update on an <em>earlier</em> checkpoint
-    instead. But how?
+    Merging only scales the update down without changing its direction, so SFT was
+    learning something useful. It hurts because it interferes with existing capabilities.
+  </p>
+  <p>
+    Where does the interference come from? Training on narrow distributions (e.g.,
+    post-training, or even late pretraining) skews which task a model infers its inputs to
+    come from. So finetuning later checkpoints routes more of the new learning signal to
+    the parameters that support existing capabilities. This suggests learning the update
+    on an <em>earlier</em> checkpoint instead. But how?
   </p>
 </section>
 
 <section id="grafting">
-  <h2>4.&nbsp;&nbsp;Grafting</h2>
+  <h2>3.&nbsp;&nbsp;Grafting</h2>
   <p>
     Task arithmetic (Ilharco et al., 2023) shows that an update need not be derived from
     the model it is applied to. Based on this, we change <em>where</em> the update is
@@ -138,7 +133,7 @@
 </section>
 
 <section id="donor">
-  <h2>5.&nbsp;&nbsp;Which donor model?</h2>
+  <h2>4.&nbsp;&nbsp;Which donor model?</h2>
   <p>
     We want a donor that is early enough to see less interference, but late enough to stay
     close to the final model. OLMo-3 releases many intermediate checkpoints, which lets us
@@ -160,7 +155,7 @@
 </section>
 
 <section id="results">
-  <h2>6.&nbsp;&nbsp;Results</h2>
+  <h2>5.&nbsp;&nbsp;Results</h2>
   <p>
     Across distillation from expert traces, self-improvement with Pedagogical RL, and
     knowledge injection, grafting beats both SFT and OPSD on new and old tasks, without
@@ -212,7 +207,7 @@
 </section>
 
 <section id="takeaways">
-  <h2>7.&nbsp;&nbsp;Takeaways</h2>
+  <h2>6.&nbsp;&nbsp;Takeaways</h2>
   <p>
     Together, our results suggest that on-policyness is not a necessity for continual
     learning. Since continual learning applications often involve off-policy experiences,
