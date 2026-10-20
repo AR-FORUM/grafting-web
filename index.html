@@ -238,9 +238,26 @@
 <section id="takeaways">
   <h2>5.&nbsp;&nbsp;Takeaways</h2>
   <p>
-    Together, our results suggest that on-policyness is not a necessity for continual
-    learning. Since continual learning applications often involve off-policy experiences,
-    we hope our work inspires more effort on making off-policy training generalize better.
+    We asked whether continual learning for RL-trained models has to be on-policy, and our
+    results suggest that it does not.
+  </p>
+  <ul>
+    <li><strong>SFT learns a useful signal but applies it badly.</strong> Merging the SFT
+      model back toward the post-trained model improves both old and new task performance,
+      so the update is useful; the damage comes from interference with existing
+      capabilities.</li>
+    <li><strong>Where the update is learned matters.</strong> Grafting learns the update on
+      an earlier donor checkpoint, scales it, and optionally masks the most sensitive
+      directions. In every setting we study, with two model families and three sizes, it
+      dominates both SFT and OPSD on new and old tasks, without on-policy sampling.</li>
+    <li><strong>The donor is a knob.</strong> Each post-training stage makes the model a
+      worse donor, and the best donors are checkpoints before the end of pretraining.</li>
+  </ul>
+  <p>
+    Open questions include how to choose the donor checkpoint in a principled way, and how
+    to predict &lambda; and &rho; instead of sweeping them. More broadly, since continual
+    learning applications often involve off-policy experiences, we hope our work inspires
+    more effort on making off-policy training generalize better.
   </p>
 </section>
 
