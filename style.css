@@ -92,28 +92,6 @@ body {
 }
 .paper-header .links a { margin: 0 0.15rem; }
 
-/* ------------------------------- tldr ----------------------------------- */
-.tldr {
-  background: var(--code-bg);
-  border-left: 3px solid var(--fg);
-  border-radius: 0 6px 6px 0;
-  padding: 1rem 1.25rem;
-  margin: 2rem 0 2.5rem;
-}
-.tldr h2 {
-  margin: 0 0 0.4rem;
-  font-size: 0.85rem;
-  font-weight: 600;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--fg-muted);
-}
-.tldr p {
-  margin: 0.55rem 0;
-}
-.tldr p:first-of-type { margin-top: 0; }
-.tldr p:last-of-type { margin-bottom: 0; }
-
 /* ------------------------------- headline stats ------------------------- */
 .headline-stats {
   display: grid;

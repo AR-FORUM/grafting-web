@@ -48,34 +48,6 @@
   <img src="figures/teaser.png" alt="Left: SFT, OPSD and grafting on Qwen3-1.7B (thinking), new-task vs old-task performance. Right: grafting from OLMo-3 donors along pretraining." />
 </figure>
 
-<section class="tldr">
-  <h2>Abstract</h2>
-  <p>
-    A long-standing goal of AI is a model that can continually learn and improve itself. On
-    post-trained models, supervised finetuning (SFT) on new data often causes poor
-    generalization and catastrophic forgetting. As such, the conventional wisdom is that
-    <em>on-policy</em> training is a prerequisite for continual learning. In practice,
-    however, data containing new knowledge or capabilities are often <em>off-policy</em>.
-    While methods such as on-policy self-distillation (OPSD) try to bridge this gap by
-    converting off-policy data into on-policy signal, they have been shown to cause
-    reasoning collapse. In this paper, we show that <em>off-policy merging beats OPSD for
-    continual learning</em>. We first show that SFT learns a useful signal from new data,
-    but naively applying its update interferes with existing capabilities. We reduce this
-    interference with a simple recipe we term <strong>grafting</strong>, which changes
-    where the update is learned and how it is applied: (1) learning the update on an
-    earlier <strong>donor checkpoint</strong>, ideally even before the end of
-    <em>pretraining</em>, and applying the weight update to the post-trained model;
-    (2) <strong>scaling</strong> the weight update, equivalent to a form of model merging;
-    and (3) optionally, <strong>masking</strong> the most sensitive update directions when
-    the new data distribution is far from the post-trained model. Across continual
-    learning settings including (1) distilling from expert traces, (2) self-improvement
-    with STaR and Pedagogical RL, and (3) injecting knowledge after pretraining cutoff,
-    grafting Pareto-dominates both SFT and OPSD in new-task and old-task performance,
-    while avoiding expensive on-policy sampling. Therefore, our work challenges on-policy
-    training as a necessity for continual learning on RL-trained models.
-  </p>
-</section>
-
 <nav class="toc">
   <h2>Contents</h2>
   <ol>
