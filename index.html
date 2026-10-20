@@ -117,9 +117,9 @@
     learned and <em>how</em> it is applied. We call the method <strong>grafting</strong>:
   </p>
   <ol>
-    <li>learn the update on an earlier <em>donor model</em> &theta;<sub>donor</sub>;</li>
-    <li>scale the weight update by &lambda; and apply it to the post-trained model;</li>
-    <li>optionally, mask the most sensitive weight directions (estimated with the Fisher
+    <li>learn the update on an earlier <strong>donor model</strong> &theta;<sub>donor</sub>;</li>
+    <li><strong>scale</strong> the weight update by &lambda; and apply it to the post-trained model;</li>
+    <li>optionally, <strong>mask</strong> the most sensitive weight directions (estimated with the Fisher
       information on old-task data) when the new data distribution is far from the
       post-trained model.</li>
   </ol>
