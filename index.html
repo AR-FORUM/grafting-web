@@ -108,12 +108,12 @@
   <p>
     Where does the interference come from? Training on narrow distributions (e.g.,
     post-training, or even late pretraining) skews which task a model infers its inputs to
-    come from. So finetuning later checkpoints routes more of the new learning signal to
+    come from (<a href="https://arxiv.org/abs/2309.10105" target="_blank" rel="noopener noreferrer">Kotha et al., 2024</a>). So finetuning later checkpoints routes more of the new learning signal to
     the parameters that support existing capabilities. This suggests learning the update
     on an <em>earlier</em> checkpoint instead. But how?
   </p>
   <p>
-    Task arithmetic (Ilharco et al., 2023) shows that an update need not be derived from
+    Task arithmetic (<a href="https://arxiv.org/abs/2212.04089" target="_blank" rel="noopener noreferrer">Ilharco et al., 2023</a>) shows that an update need not be derived from
     the model it is applied to. Based on this, we change <em>where</em> the update is
     learned and <em>how</em> it is applied. We call the method <strong>grafting</strong>:
   </p>
