@@ -44,10 +44,6 @@
   </p>
 </header>
 
-<figure class="hero">
-  <img src="figures/teaser.png" alt="Left: SFT, OPSD and grafting on Qwen3-1.7B (thinking), new-task vs old-task performance. Right: grafting from OLMo-3 donors along pretraining." />
-</figure>
-
 <nav class="toc">
   <h2>Contents</h2>
   <ol>
@@ -55,7 +51,7 @@
     <li><a href="#merging">Model merging alone mitigates forgetting</a></li>
     <li><a href="#grafting">Grafting</a></li>
     <li><a href="#results">Results</a></li>
-    <li><a href="#takeaways">Takeaways</a></li>
+    <li><a href="#takeaways">Making off-policy learning work</a></li>
   </ol>
 </nav>
 
@@ -63,18 +59,35 @@
   <h2>1.&nbsp;&nbsp;Off-policy = forgetting?</h2>
   <p>
     A long-standing goal of AI is a model that continually learns and improves itself.
-    Today's models are heavily post-trained with RL, and the simplest way to teach them
-    something new is supervised finetuning (SFT) on the new data. But SFT on such models
-    often forgets and fails to generalize, so the conventional wisdom is that continual
-    learning needs <span class="hl-on">on-policy</span> training, and many works try to
-    make the data more on-policy, e.g., on-policy self-distillation (OPSD), Pedagogical RL,
-    and SFT with sampling.
+    Today's models are heavily post-trained with RL, but supervised finetuning (SFT) on
+    new data often causes forgetting and fails to generalize.
+    <span class="hl-on">On-policy</span> training, where the model learns from its own
+    current behavior, has shown better retention
+    (<a href="https://arxiv.org/abs/2510.18874" target="_blank" rel="noopener noreferrer">Chen et al., 2025</a>).
+    This motivates the view that continual learning needs to be on-policy.
   </p>
   <p>
-    In practice, it is hard to balance on-policyness and data quality, while the data that
-    carry new knowledge or capabilities are usually <span class="hl-off">off-policy</span>:
-    new facts after the pretraining cutoff, expert demonstrations, and synthetic data for
-    self-improvement. What if on-policy training is not necessary?
+    However, the data that carry new knowledge or capabilities are usually
+    <span class="hl-off">off-policy</span>: new facts after the pretraining cutoff,
+    expert demonstrations, and synthetic data for self-improvement. These are precisely
+    the data we want the model to learn from.
+  </p>
+  <p>
+    To bridge this gap, many works try to make the data or learning signal more
+    on-policy, e.g.,
+    <a href="https://arxiv.org/abs/2601.18734" target="_blank" rel="noopener noreferrer">on-policy self-distillation (OPSD)</a>,
+    <a href="https://noahziems.com/pedagogical-rl" target="_blank" rel="noopener noreferrer">Pedagogical RL</a>, and
+    <a href="https://arxiv.org/abs/2610.02140" target="_blank" rel="noopener noreferrer">SFT with sampling</a>.
+  </p>
+  <p>
+    But these approaches do not always preserve existing capabilities. Recent work finds
+    that privileged self-distillation can suppress uncertainty and hurt out-of-domain reasoning
+    (<a href="https://arxiv.org/abs/2603.24472" target="_blank" rel="noopener noreferrer">Kim et al., 2026</a>),
+    or reduce verification and backtracking in thinking models
+    (<a href="https://arxiv.org/abs/2607.05184" target="_blank" rel="noopener noreferrer">Kaur et al., 2026</a>).
+  </p>
+  <p>
+    <strong><em>What if on-policy training is not necessary?</em></strong>
   </p>
 </section>
 
@@ -88,12 +101,11 @@
     over SFT despite its expensive on-policy sampling.
   </p>
   <figure>
-    <img src="figures/fig_scaling_1p7b.png" alt="Learning-rate sweep without merging (left) and merging-scale sweep (right) for SFT, OPSD and grafting on Qwen3-1.7B." />
+    <img src="figures/grafting-merging.png" alt="Without merging (left) and with merging (right): SFT, on-policy self-distillation and grafting compared with the original post-trained model." />
     <figcaption>
-      <strong>Model merging improves both old and new task performance</strong> on
-      Qwen3-1.7B (thinking). <em>(Left)</em> Without merging, neither SFT nor OPSD
-      outperforms the post-trained model. <em>(Right)</em> Sweeping the merging scale
-      improves generalization for every method.
+      <strong>Merging improves the old/new-task tradeoff.</strong>
+      <em>(Left)</em> Without merging, SFT and OPSD lose old-task performance when learning
+      the new task. <em>(Right)</em> Merging improves retention.
     </figcaption>
   </figure>
 </section>
@@ -101,11 +113,11 @@
 <section id="grafting">
   <h2>3.&nbsp;&nbsp;Grafting</h2>
   <p>
-    Merging only scales the update down without changing its direction, so SFT was
-    learning something useful. It hurts because it interferes with existing capabilities.
+    We see that model merging largely mitigates forgetting of existing capabilities,
+    but why does forgetting happen in the first place?
   </p>
   <p>
-    Where does the interference come from? Training on narrow distributions (e.g.,
+    Training on narrow distributions (e.g.,
     post-training, or even late pretraining) skews which task a model infers its inputs to
     come from (<a href="https://arxiv.org/abs/2309.10105" target="_blank" rel="noopener noreferrer">Kotha et al., 2024</a>). So finetuning later checkpoints routes more of the new learning signal to
     the parameters that support existing capabilities. This suggests learning the update
@@ -152,43 +164,38 @@
 
 <section id="results">
   <h2>4.&nbsp;&nbsp;Results</h2>
-  <p>
-    We study settings where off-policy data arises naturally. For math, the question is
-    where the thinking traces come from, and we study three sources:
-  </p>
-  <ul>
-    <li><strong>Distillation from expert traces.</strong> On hard problems the model cannot
-      solve, the only way to learn is from a stronger model, so we use traces written by
-      DeepSeek-V4-Pro.</li>
-    <li><strong>Self-improvement with STaR.</strong> Without a stronger model, the model can
-      still learn from its own successes: we rejection-sample its attempts and keep one
-      verified trace per solved problem. This requires that the model can solve the problem
-      with a large budget.</li>
-    <li><strong>Self-improvement with Pedagogical RL.</strong> Solutions from humans or
-      expert systems rarely come with thinking traces. Pedagogical RL trains a copy of the
-      model that sees the reference solution to write thinking traces the model can learn
-      from, so the model self-improves from solutions alone.</li>
-  </ul>
-  <p>
-    For <strong>knowledge injection</strong>, the new data are facts absent from prior
-    training, as for any fact after the pretraining cutoff. We use invented entities so
-    that no fact can leak from pretraining, and the question-answer form is far from how a
-    reasoning model writes.
-  </p>
+  <p>We study settings where off-policy data arises naturally.</p>
   <p>
     In all settings, we assume access only to the data, not to the weights or logits of a
     stronger teacher, so on-policy distillation from a teacher is not possible. New-task
     performance is measured on held-out data from the new task; old-task performance is
-    the mean over AIME 2024, AIME 2025 and HMMT 2025.
+    the mean over AIME 2024, AIME 2025 and HMMT 2025. All methods receive the same merging
+    sweep in the comparisons below.
   </p>
 
-  <h3>Distillation from expert traces</h3>
+  <h3 id="math-results">4.1&nbsp;&nbsp;Math</h3>
+  <p>
+    For math, the question is where the thinking traces come from, and we study two sources:
+  </p>
+  <ul>
+    <li><strong>Distillation from expert traces.</strong> On hard problems the model rarely
+      solves, we can learn from a stronger model by doing SFT on its traces. We use traces
+      written by DeepSeek-V4-Pro. Their reasoning may differ substantially from the
+      student's, making forgetting a concern.</li>
+    <li><strong>Self-improvement with <a href="https://noahziems.com/pedagogical-rl" target="_blank" rel="noopener noreferrer">Pedagogical RL</a>.</strong>
+      Solutions from humans or expert systems rarely come with thinking traces.
+      Pedagogical RL trains a copy of the model that sees the reference solution to write
+      traces the student can learn from, then uses a student-likelihood-weighted imitation
+      step. In our experiment, we compare SFT on Pedagogical RL traces with grafting on
+      the same Pedagogical RL traces, and show that grafting performs substantially better.</li>
+  </ul>
+
+  <h4>Distillation from expert traces</h4>
   <figure>
     <img src="figures/fig_atlas_1p7b.png" alt="Qwen3-1.7B thinking: SFT, OPSD and grafting at pass@1, pass@4 and pass@8." />
     <figcaption>
       <strong>Qwen3-1.7B (thinking)</strong> on hard math problems the model cannot solve,
-      with teacher traces from DeepSeek-V4-Pro. Grafting dominates SFT and OPSD at pass@1,
-      pass@4 and pass@8.
+      with teacher traces from DeepSeek-V4-Pro, evaluated at pass@1, pass@4 and pass@8.
     </figcaption>
   </figure>
   <div class="fig-pair">
@@ -200,64 +207,58 @@
       <strong>Qwen3-8B, thinking (left) and instruct (right).</strong>
     </figcaption>
   </figure>
+  <p>
+    Grafting improves the joint old/new-task frontier over SFT and OPSD. The gains persist
+    when allowing multiple attempts and in non-thinking mode. OPSD offers little
+    improvement in old-task generalization over the original thinking models.
+  </p>
 
-  <h3>Self-improvement with STaR</h3>
-  <figure class="medium">
-    <img src="figures/fig_star_1p7b.png" alt="Self-improvement with rejection sampling (STaR) on Qwen3-1.7B." />
-    <figcaption>
-      <strong>Qwen3-1.7B (thinking)</strong> learning its own rejection-sampled traces, up
-      to 32 attempts per problem and one verified trace per solved problem. New-task
-      performance matches SFT (the original STaR), and old-task performance rises about
-      eight points above it.
-    </figcaption>
-  </figure>
-
-  <h3>Self-improvement with Pedagogical RL</h3>
+  <h4>Self-improvement with Pedagogical RL</h4>
   <figure class="medium">
     <img src="figures/fig_pedrl_1p7b.png" alt="Self-improvement with Pedagogical RL on Qwen3-1.7B." />
     <figcaption>
       <strong>Qwen3-1.7B (thinking).</strong> A copy of the model that sees the reference
-      solution is trained with RL to write thinking traces the model can learn from. Learning
-      these traces with grafting instead of SFT improves both new-task and old-task
-      performance.
+      solution is trained with RL to write thinking traces the model can learn from.
     </figcaption>
   </figure>
+  <p>
+    Learning the same generated traces with grafting instead of SFT improves both
+    new-task performance and generalization to old tasks. Grafting also outperforms OPSD.
+  </p>
 
-  <h3>Knowledge injection</h3>
+  <h3 id="knowledge-results">4.2&nbsp;&nbsp;Knowledge injection</h3>
+  <p>
+    For <strong>knowledge injection</strong>, the new data are facts absent from prior
+    training, as for any fact after the pretraining cutoff. We use invented entities so
+    that no fact can leak from pretraining, and the question-answer form is far from how a
+    reasoning model writes. We therefore expect this to be a particularly demanding
+    test of retaining its math capabilities.
+  </p>
   <figure class="medium">
     <img src="figures/fig_knowledge.png" alt="Knowledge injection results for SFT, OPSD and grafting." />
     <figcaption>
       <strong>Qwen3-1.7B (thinking)</strong> learning 1,125 facts about 200 invented
-      entities, evaluated on held-out paraphrases. Grafting learns nearly all the facts
-      while keeping old-task performance at or above the post-trained model; SFT forgets,
-      and OPSD learns less.
+      entities, evaluated on held-out paraphrases.
     </figcaption>
   </figure>
+  <p>
+    SFT learns the new facts but forgets existing math capabilities. OPSD largely retains
+    those capabilities but learns fewer facts. Grafting learns nearly all the facts while
+    keeping old-task performance at or above the original model.
+  </p>
 </section>
 
 <section id="takeaways">
-  <h2>5.&nbsp;&nbsp;Takeaways</h2>
+  <h2>5.&nbsp;&nbsp;Making off-policy learning work</h2>
   <p>
-    We asked whether continual learning for RL-trained models has to be on-policy, and our
-    results suggest that it does not.
+    Off-policy data are a natural part of continual learning. When direct SFT fails,
+    converting these data into on-policy signals is one response. Our results show that
+    improving how the weight update is learned and applied is another, and can be more
+    effective.
   </p>
-  <ul>
-    <li><strong>SFT learns a useful signal but applies it badly.</strong> Merging the SFT
-      model back toward the post-trained model improves both old and new task performance,
-      so the update is useful; the damage comes from interference with existing
-      capabilities.</li>
-    <li><strong>Where the update is learned matters.</strong> Grafting learns the update on
-      an earlier donor checkpoint, scales it, and optionally masks the most sensitive
-      directions. In every setting we study, with two model families and three sizes, it
-      dominates both SFT and OPSD on new and old tasks, without on-policy sampling.</li>
-    <li><strong>The donor is a knob.</strong> Each post-training stage makes the model a
-      worse donor, and the best donors are checkpoints before the end of pretraining.</li>
-  </ul>
   <p>
-    Open questions include how to choose the donor checkpoint in a principled way, and how
-    to predict &lambda; and &rho; instead of sweeping them. More broadly, since continual
-    learning applications often involve off-policy experiences, we hope our work inspires
-    more effort on making off-policy training generalize better.
+    We hope this encourages more work on making off-policy learning work, rather than
+    treating it as a difficulty to bypass.
   </p>
 </section>
 
