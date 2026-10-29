@@ -39,8 +39,11 @@
   <p class="meta">October 2026</p>
   <p class="links">
     <a href="https://arxiv.org/abs/2610.05872" target="_blank" rel="noopener noreferrer">paper</a> &middot;
-    <a href="https://github.com/ar-forum/grafting" target="_blank" rel="noopener noreferrer">code</a> &middot;
-    <a href="#cite">bibtex</a>
+    <a href="https://github.com/ar-forum/grafting" target="_blank" rel="noopener noreferrer">code</a>
+  </p>
+  <p class="meta">
+    This post is based on our paper,
+    <a href="https://arxiv.org/abs/2610.05872" target="_blank" rel="noopener noreferrer">Off-Policy Merging Beats On-Policy Self-Distillation for Continual Learning</a>.
   </p>
 </header>
 
@@ -254,40 +257,6 @@
   </p>
 </section>
 
-<!-- =========================== CITATION ========================== -->
-<footer id="cite" class="citation">
-  <h2>Citation</h2>
-  <div class="bibtex-wrap">
-    <button class="copy-btn" type="button" data-copy-target="bibtex"
-            aria-label="Copy BibTeX to clipboard">copy</button>
-<pre id="bibtex"><code>@article{wu2026grafting,
-  title   = {Off-Policy Merging Beats On-Policy Self-Distillation for Continual Learning},
-  author  = {Wu, Chen Henry and Zhang, Thomas and Raghunathan, Aditi},
-  journal = {arXiv preprint arXiv:2610.05872},
-  year    = {2026},
-}</code></pre>
-  </div>
-</footer>
-
 </main>
-
-<script>
-  document.querySelectorAll(".copy-btn").forEach(function (btn) {
-    btn.addEventListener("click", function () {
-      var target = document.getElementById(btn.dataset.copyTarget);
-      if (!target) return;
-      var text = target.textContent.trim();
-      navigator.clipboard.writeText(text).then(function () {
-        var orig = btn.textContent;
-        btn.textContent = "copied";
-        btn.classList.add("is-copied");
-        setTimeout(function () {
-          btn.textContent = orig;
-          btn.classList.remove("is-copied");
-        }, 1400);
-      });
-    });
-  });
-</script>
 </body>
 </html>
