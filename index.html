@@ -94,7 +94,7 @@
 <section id="merging">
   <h2>2.&nbsp;&nbsp;Model merging alone mitigates forgetting</h2>
   <p>
-    Our premise is that simply merging the SFT model back toward the original post-trained
+    We first find that simply merging the SFT model back toward the original post-trained
     model, &theta;<sub>merge</sub> = (1 &minus; &lambda;) &theta;<sub>post</sub> + &lambda; &theta;&prime;<sub>post</sub>,
     makes SFT a strong baseline. Without merging, neither SFT nor OPSD beats the
     post-trained model. With merging, SFT generalizes much better, and OPSD loses its edge
@@ -139,7 +139,7 @@
   <p>
     Here &theta;<sub>donor-ft</sub> is the donor after finetuning on the new data, and the
     mask M<sub>&rho;</sub> zeroes the top-&rho; fraction of Fisher-weighted directions of
-    the update. Masking as few as &rho; &le; 1% of directions is enough.
+    the update. In our experiments, masking at most 1% of directions is enough.
   </p>
   <h3 id="donor">Which donor model?</h3>
   <p>
@@ -228,8 +228,8 @@
 
   <h3 id="knowledge-results">4.2&nbsp;&nbsp;Knowledge injection</h3>
   <p>
-    For <strong>knowledge injection</strong>, the new data are facts absent from prior
-    training, as for any fact after the pretraining cutoff. We use invented entities so
+    For <strong>knowledge injection</strong>, we study facts absent from prior training,
+    such as new facts that emerge after the pretraining cutoff. We use invented entities so
     that no fact can leak from pretraining, and the question-answer form is far from how a
     reasoning model writes. We therefore expect this to be a particularly demanding
     test of retaining its math capabilities.
@@ -244,7 +244,7 @@
   <p>
     SFT learns the new facts but forgets existing math capabilities. OPSD largely retains
     those capabilities but learns fewer facts. Grafting learns nearly all the facts while
-    keeping old-task performance at or above the original model.
+    keeping old-task performance at or above that of the original model.
   </p>
 </section>
 
