@@ -164,22 +164,17 @@
 
   <h3 id="math-results">4.1&nbsp;&nbsp;Math</h3>
   <p>
-    For math, the question is where the thinking traces come from, and we study two sources:
+    For math, we want the model to learn to solve hard problems while preserving its
+    existing reasoning capabilities. We study two sources of thinking traces: expert
+    traces from a stronger model, which may differ substantially from the student's
+    behavior, and pedagogical traces designed to be easier for the student to learn from.
   </p>
-  <ul>
-    <li><strong>Distillation from expert traces.</strong> On hard problems the model rarely
-      solves, we can learn from a stronger model by doing SFT on its traces. We use traces
-      written by DeepSeek-V4-Pro. Their reasoning may differ substantially from the
-      student's, making forgetting a concern.</li>
-    <li><strong>Self-improvement with <a href="https://noahziems.com/pedagogical-rl" target="_blank" rel="noopener noreferrer">Pedagogical RL</a>.</strong>
-      Solutions from humans or expert systems rarely come with thinking traces.
-      Pedagogical RL trains a copy of the model that sees the reference solution to write
-      traces the student can learn from, then uses a student-likelihood-weighted imitation
-      step. In our experiment, we compare SFT on Pedagogical RL traces with grafting on
-      the same Pedagogical RL traces, and show that grafting performs substantially better.</li>
-  </ul>
-
-  <h4>Distillation from expert traces</h4>
+  <p>
+    <strong>Distillation from expert traces.</strong> On hard problems the model
+    rarely solves, we can learn from a stronger model by doing SFT on its traces. We use
+    traces written by DeepSeek-V4-Pro. Their reasoning may differ substantially from the
+    student's, making forgetting a concern.
+  </p>
   <figure>
     <img src="figures/fig_atlas_1p7b.png" alt="Qwen3-1.7B thinking: SFT, OPSD and grafting at pass@1, pass@4 and pass@8." />
     <figcaption>
@@ -202,7 +197,15 @@
     improvement in old-task generalization over the original thinking models.
   </p>
 
-  <h4>Self-improvement with Pedagogical RL</h4>
+  <p>
+    <strong>Self-improvement with <a href="https://noahziems.com/pedagogical-rl" target="_blank" rel="noopener noreferrer">Pedagogical RL</a>.</strong>
+    Solutions from humans or expert systems rarely come with thinking traces.
+    Pedagogical RL trains a copy of the model that sees the reference solution to write
+    traces the student can learn from, then uses SFT. On our hard math problems,
+    direct SFT on these pedagogical traces still causes substantial forgetting. We
+    therefore test whether grafting on the same traces can learn the new task while
+    better preserving existing capabilities.
+  </p>
   <figure class="medium">
     <img src="figures/fig_pedrl_1p7b.png" alt="Self-improvement with Pedagogical RL on Qwen3-1.7B." />
     <figcaption>
