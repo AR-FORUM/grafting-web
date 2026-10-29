@@ -247,13 +247,14 @@
   <h2>5.&nbsp;&nbsp;Making off-policy learning work</h2>
   <p>
     Off-policy data are a natural part of continual learning. When direct SFT fails,
-    converting these data into on-policy signals is one response. Our results show that
-    improving how the weight update is learned and applied is another, and can be more
-    effective.
+    converting these data into on-policy signals is a natural approach. However, our results demonstrate
+    that the failure of direct SFT is not due to off-policyness: simple modifications to
+    off-policy weight updates can be more effective both for acquiring new capabilities
+    and preserving prior behavior than current on-policy methods, while inheriting the efficiency of off-policy training.
   </p>
   <p>
-    We hope this encourages more work on making off-policy learning work, rather than
-    treating it as a difficulty to bypass.
+    We hope this inspires more work re-assessing and expanding the limits of off-policy learning, rather than
+    treating it as a fundamental obstacle to bypass.
   </p>
 </section>
 
