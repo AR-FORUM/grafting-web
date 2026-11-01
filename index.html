@@ -45,7 +45,7 @@
     Aditi Raghunathan
   </p>
   <p class="affiliation">Carnegie Mellon University</p>
-  <p class="meta">October 2026</p>
+  <p class="meta">November 2026</p>
   <p class="meta">
     Based on our paper,
     <a href="https://arxiv.org/abs/2610.05872" target="_blank" rel="noopener noreferrer">Off-Policy Merging Beats On-Policy Self-Distillation for Continual Learning</a>.
@@ -57,10 +57,10 @@
   <h2>1.&nbsp;&nbsp;Off-policy = forgetting?</h2>
   <p>
     A long-standing goal of AI is a model that continually learns and improves itself.
-    Today's models are heavily post-trained with RL, but supervised finetuning (SFT) on
+    Today's models are heavily post-trained with RL, and supervised finetuning (SFT) on top of these models with
     new data often causes forgetting and fails to generalize.
     <span class="hl-on">On-policy</span> training, where the model learns from its own
-    current behavior, has shown better retention
+    current behavior, such as RL, has shown better retention
     (<a href="https://arxiv.org/abs/2510.18874" target="_blank" rel="noopener noreferrer">Chen et al., 2025</a>).
     This motivates the view that continual learning needs to be on-policy.
   </p>
@@ -79,14 +79,14 @@
   </p>
   <p>
     But if you have tried these approaches, you may have found it tricky to balance
-    on-policyness and data quality. They also do not always preserve existing capabilities. Recent work finds
-    that privileged self-distillation can suppress uncertainty and hurt out-of-domain reasoning
+    on-policyness and data quality. They also do not always preserve existing capabilities. For example, recent work finds
+    that OPSD can suppress uncertainty and hurt out-of-domain reasoning
     (<a href="https://arxiv.org/abs/2603.24472" target="_blank" rel="noopener noreferrer">Kim et al., 2026</a>),
     or reduce verification and backtracking in thinking models
     (<a href="https://arxiv.org/abs/2607.05184" target="_blank" rel="noopener noreferrer">Kaur et al., 2026</a>).
   </p>
   <p>
-    Therefore, we ask:
+    These failures motivate us to seek better ways to learn from off-policy data. We begin by questioning a key assumption:
     <strong><em>Is on-policy training fundamental to continual learning?</em></strong>
   </p>
 </section>
@@ -94,18 +94,18 @@
 <section id="merging">
   <h2>2.&nbsp;&nbsp;Model merging alone mitigates forgetting</h2>
   <p>
-    We first find that simply merging the SFT model back toward the original post-trained
+    We start with a "free lunch" brought by model merging: simply merging the SFT model back toward the original post-trained
     model, \(\theta_{\mathrm{merge}} = (1 - \lambda)\theta_{\mathrm{post}} + \lambda\theta'_{\mathrm{post}}\),
-    makes SFT a strong baseline. Without merging, neither SFT nor OPSD beats the
-    post-trained model. With merging, SFT generalizes much better, and OPSD loses its edge
+    makes SFT a strong baseline for continual learning. Specifically, without merging, neither SFT nor OPSD beats the
+    post-trained model, and SFT is much worse in terms of old-task performance. With merging, SFT generalizes much better, and OPSD loses its edge
     over SFT despite its expensive on-policy sampling.
   </p>
   <figure>
     <img src="figures/grafting-merging.png" alt="Without merging (left) and with merging (right): SFT, on-policy self-distillation and grafting compared with the original post-trained model." />
     <figcaption>
-      <strong>Merging improves the old/new-task tradeoff.</strong>
+      <strong>Merging improves the old/new-task frontier.</strong>
       <em>(Left)</em> Without merging, SFT and OPSD lose old-task performance when learning
-      the new task. <em>(Right)</em> Merging improves retention.
+      the new task. <em>(Right)</em> Merging improves old-task retention without harming new-task performance.
     </figcaption>
   </figure>
 </section>
@@ -114,9 +114,9 @@
   <h2>3.&nbsp;&nbsp;Grafting</h2>
   <p>
     We see that model merging largely mitigates forgetting of existing capabilities,
-    but why does forgetting happen in the first place?
+    but why does forgetting happen in the first place? Can we make model merging even better?
   </p>
-  <p>
+  <p><strong>Key intuition:</strong>
     Training on narrow distributions (e.g.,
     post-training, or even late pretraining) skews which task a model infers its inputs to
     come from (<a href="https://arxiv.org/abs/2309.10105" target="_blank" rel="noopener noreferrer">Kotha et al., 2024</a>). So finetuning later checkpoints routes more of the new learning signal to
@@ -145,7 +145,7 @@
     the update. In our experiments, masking at most 1% of directions is enough.
   </p>
   <p>
-    Scaling the graft is equivalent to merging the fully grafted model back toward the
+    <strong>Note:</strong> Scaling the graft is equivalent to merging the fully grafted model back toward the
     original post-trained model. Let \(\Delta_{\mathrm{graft}} = M_\rho \odot
     (\theta_{\text{donor-ft}} - \theta_{\mathrm{donor}})\), and define the fully grafted
     model as \(\theta_{\mathrm{graft}} = \theta_{\mathrm{post}} + \Delta_{\mathrm{graft}}\). Then
@@ -156,7 +156,7 @@
   \]</p>
   <p>
     With the post-trained model itself as the donor and no masking, this reduces to the
-    model-merging baseline in <a href="#merging">Section 2</a> (WiSE-FT).
+    model-merging baseline in <a href="#merging">Section 2</a>.
   </p>
   <h3 id="donor">Which donor model?</h3>
   <p>
@@ -175,7 +175,7 @@
       Grafting from different donors with OLMo-3-7B (thinking).
       <em>(Left)</em> The donor moves along post-training: base &rarr; SFT &rarr; DPO
       &rarr; RL. <em>(Right)</em> The donor moves back along pretraining, up to 12k steps
-      before the base model.
+      before the base model (note that the final base model is dominated by earlier pretraining checkpoints).
     </figcaption>
   </figure>
 </section>
@@ -184,8 +184,9 @@
   <h2>4.&nbsp;&nbsp;Results</h2>
   <p>We study settings where off-policy data arises naturally.</p>
   <p>
-    In all settings, we assume access only to the data, not to the weights or logits of a
-    stronger teacher, so on-policy distillation from a teacher is not possible. New-task
+    <strong>General settings:</strong>
+    In all scenarios, we assume access only to the data, not to the weights or logits of a
+    stronger teacher, so direct on-policy distillation from a teacher is not possible. New-task
     performance is measured on held-out data from the new task; old-task performance is
     the mean over AIME 2024, AIME 2025 and HMMT 2025. All methods receive the same merging
     sweep in the comparisons below.
@@ -229,9 +230,10 @@
   <p>
     <strong>Self-improvement with <a href="https://noahziems.com/pedagogical-rl" target="_blank" rel="noopener noreferrer">Pedagogical RL</a>.</strong>
     Solutions from humans or expert systems rarely come with thinking traces.
-    Pedagogical RL trains a copy of the model that sees the reference solution to write
+    Pedagogical RL addresses this challenge by teaching the model to write thinking traces by only looking at the solution.
+    Specifically, it trains a copy of the model that sees the reference solution to write
     traces the student can learn from, then uses SFT. On our hard math problems,
-    direct SFT on these pedagogical traces still causes substantial forgetting. We
+    however, direct SFT on these pedagogical traces still causes substantial forgetting. We
     therefore test whether grafting on the same traces can learn the new task while
     better preserving existing capabilities.
   </p>
@@ -249,7 +251,7 @@
 
   <h3 id="knowledge-results">4.2&nbsp;&nbsp;Knowledge injection</h3>
   <p>
-    For <strong>knowledge injection</strong>, we study facts absent from prior training,
+    For <strong>knowledge injection</strong>, we study facts absent from pretraining training,
     such as new facts that emerge after the pretraining cutoff. We use invented entities so
     that no fact can leak from pretraining, and the question-answer form is far from how a
     reasoning model writes. We therefore expect this to be a particularly demanding
