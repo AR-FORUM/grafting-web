@@ -7,7 +7,7 @@
 <meta name="description" content="Grafting: learn the update on an earlier donor checkpoint, scale it, optionally mask sensitive directions, and graft it onto the post-trained model. Off-policy, and better than on-policy self-distillation on new and old tasks." />
 
 <!-- Open Graph (Facebook / LinkedIn / Slack / Discord / iMessage previews) -->
-<meta property="og:title" content="How Can Post-Trained Models Continually Learn from Off-Policy Data?" />
+<meta property="og:title" content="How Can Post-Trained Models Continually Learn with Off-Policy Training?" />
 <meta property="og:description" content="Grafting learns the update on an earlier donor checkpoint, scales it, and applies it to the post-trained model. It beats SFT and on-policy self-distillation on new and old tasks, with no on-policy sampling." />
 <meta property="og:type" content="article" />
 <meta property="og:url" content="https://ar-forum.github.io/grafting-webpage/" />
@@ -16,7 +16,7 @@
 
 <!-- Twitter card -->
 <meta name="twitter:card" content="summary_large_image" />
-<meta name="twitter:title" content="How Can Post-Trained Models Continually Learn from Off-Policy Data?" />
+<meta name="twitter:title" content="How Can Post-Trained Models Continually Learn with Off-Policy Training?" />
 <meta name="twitter:description" content="Grafting: learn the update on an earlier donor checkpoint, scale it, graft it on. Beats on-policy self-distillation on new and old tasks, 10x faster to train." />
 <meta name="twitter:image" content="https://ar-forum.github.io/grafting-webpage/figures/teaser.png" />
 
@@ -57,8 +57,7 @@
   <h2>1.&nbsp;&nbsp;Off-policy = forgetting?</h2>
   <p>
     A long-standing goal of AI is a model that continually learns and improves itself.
-    Today's models are heavily post-trained with RL, and supervised finetuning (SFT) on top of these models with
-    new data often causes forgetting and fails to generalize.
+    Today's models undergo extensive post-training with RL. Further supervised finetuning (SFT) on new data can degrade their existing capabilities and generalize poorly.
     This can happen even within the same domain: as we will show, learning harder math problems can make a model worse at the comparatively easier math problems it could previously solve.
     <span class="hl-on">On-policy</span> training, where the model learns from its own
     current behavior, such as RL, has shown better retention
@@ -72,14 +71,14 @@
     the data we want the model to learn from.
   </p>
   <p>
-    To bridge this gap, many works try to convert off-policy data into on-policy signals. The key idea is to build a "privileged teacher" that sees the off-policy data and generates on-policy signals for the model to learn from, such as
+    To bridge this gap, many works try to convert off-policy data into on-policy signals, such as
     <a href="https://arxiv.org/abs/2601.18734" target="_blank" rel="noopener noreferrer">on-policy self-distillation (OPSD)</a>,
     <a href="https://noahziems.com/pedagogical-rl" target="_blank" rel="noopener noreferrer">Pedagogical RL</a>, and
     <a href="https://arxiv.org/abs/2610.02140" target="_blank" rel="noopener noreferrer">SFT with sampling</a>.
   </p>
   <p>
-    But converting off-policy data into useful on-policy training signals is itself a challenge.
-    The teachers in these methods rely on information the student will not have at test time, so their supervision usually contains artifacts (e.g., <a href="https://arxiv.org/abs/2603.24472" target="_blank" rel="noopener noreferrer">hallucinations or suppressed uncertainty</a> and <a href="https://arxiv.org/abs/2607.05184" target="_blank" rel="noopener noreferrer">reduced exploration</a>). 
+    But converting off-policy data into on-policy training signals while <em>keeping its original meaning and behavior</em> is itself a challenge.
+    This can cause artifacts like <a href="https://arxiv.org/abs/2603.24472" target="_blank" rel="noopener noreferrer">suppressed uncertainty</a> and <a href="https://arxiv.org/abs/2607.05184" target="_blank" rel="noopener noreferrer">reduced exploration</a>. 
     If you have tried these approaches, you may have found it tricky to balance
     on-policyness and data quality.
   </p>
@@ -93,9 +92,8 @@
   <h2>2.&nbsp;&nbsp;Model merging alone mitigates forgetting</h2>
   <p>
     Direct SFT on off-policy data can cause substantial forgetting. But could a simple change to the learned update help? We start with the simplest operation possible: simply merging the SFT model back toward the original post-trained
-    model, \(\theta_{\mathrm{merge}} = (1 - \lambda)\theta_{\mathrm{post}} + \lambda\theta'_{\mathrm{post}}\),
-    makes SFT a strong baseline for continual learning. Specifically, without merging, neither SFT nor OPSD beats the
-    post-trained model, and SFT is much worse in terms of old-task performance. With merging, SFT generalizes much better, and OPSD loses its edge
+    model, \(\theta_{\mathrm{merge}} = (1 - \lambda)\theta_{\mathrm{post}} + \lambda\theta'_{\mathrm{post}}\).
+    This simple operation makes SFT a strong baseline for continual learning. In the figure below, we see that without merging, gains on the new task come at the cost of performance on old tasks. With merging, SFT generalizes much better, and OPSD loses its edge
     over SFT despite its expensive on-policy sampling.
   </p>
   <figure>
@@ -276,7 +274,7 @@
     Continual learning requires models to acquire new knowledge and skills while preserving existing capabilities. Converting available data into on-policy signals is one approach, but our results show that changing the weight update can make off-policy learning substantially more effective. Even traces designed to be easier to learn from, such as those produced by Pedagogical RL, benefit from a better update rule.
   </p>
   <p>
-    These results motivate more work on how new information is incorporated into a model's parameters. Alongside efforts to making data easier to learn from, we should develop optimization and update rules that let models learn from the data available to them.
+    These results motivate more work on how new information is incorporated into a model's parameters. Alongside efforts to make data easier to learn from, we should develop optimization and update rules that let models learn from the data available to them without causing forgetting.
   </p>
 </section>
 
