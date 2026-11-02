@@ -36,7 +36,7 @@
 <main class="content">
 
 <header class="paper-header">
-  <h1>How Can Post-Trained Models Continually Learn from <span class="hl-off">Off-Policy</span> Data?</h1>
+  <h1>How Can Post-Trained Models Continually Learn with <span class="hl-off">Off-Policy</span> Training?</h1>
   <p class="authors">
     Chen Henry Wu
     &nbsp;&middot;&nbsp;
@@ -59,6 +59,7 @@
     A long-standing goal of AI is a model that continually learns and improves itself.
     Today's models are heavily post-trained with RL, and supervised finetuning (SFT) on top of these models with
     new data often causes forgetting and fails to generalize.
+    This can happen even within the same domain: as we will show, learning harder math problems can make a model worse at the comparatively easier math problems it could previously solve.
     <span class="hl-on">On-policy</span> training, where the model learns from its own
     current behavior, such as RL, has shown better retention
     (<a href="https://arxiv.org/abs/2510.18874" target="_blank" rel="noopener noreferrer">Chen et al., 2025</a>).
@@ -71,19 +72,16 @@
     the data we want the model to learn from.
   </p>
   <p>
-    To bridge this gap, many works try to make the data or learning signal more
-    on-policy, e.g.,
+    To bridge this gap, many works try to convert off-policy data into on-policy signals. The key idea is to build a "privileged teacher" that sees the off-policy data and generates on-policy signals for the model to learn from, such as
     <a href="https://arxiv.org/abs/2601.18734" target="_blank" rel="noopener noreferrer">on-policy self-distillation (OPSD)</a>,
     <a href="https://noahziems.com/pedagogical-rl" target="_blank" rel="noopener noreferrer">Pedagogical RL</a>, and
     <a href="https://arxiv.org/abs/2610.02140" target="_blank" rel="noopener noreferrer">SFT with sampling</a>.
   </p>
   <p>
-    But if you have tried these approaches, you may have found it tricky to balance
-    on-policyness and data quality. They also do not always preserve existing capabilities. For example, recent work finds
-    that OPSD can suppress uncertainty and hurt out-of-domain reasoning
-    (<a href="https://arxiv.org/abs/2603.24472" target="_blank" rel="noopener noreferrer">Kim et al., 2026</a>),
-    or reduce verification and backtracking in thinking models
-    (<a href="https://arxiv.org/abs/2607.05184" target="_blank" rel="noopener noreferrer">Kaur et al., 2026</a>).
+    But converting off-policy data into useful on-policy training signals is itself a challenge.
+    The teachers in these methods rely on information the student will not have at test time, so their supervision usually contains artifacts (e.g., <a href="https://arxiv.org/abs/2603.24472" target="_blank" rel="noopener noreferrer">hallucinations or suppressed uncertainty</a> and <a href="https://arxiv.org/abs/2607.05184" target="_blank" rel="noopener noreferrer">reduced exploration</a>). 
+    If you have tried these approaches, you may have found it tricky to balance
+    on-policyness and data quality.
   </p>
   <p>
     These failures motivate us to seek better ways to learn from off-policy data. We begin by questioning a key assumption:
@@ -94,7 +92,7 @@
 <section id="merging">
   <h2>2.&nbsp;&nbsp;Model merging alone mitigates forgetting</h2>
   <p>
-    We start with a "free lunch" brought by model merging: simply merging the SFT model back toward the original post-trained
+    Direct SFT on off-policy data can cause substantial forgetting. But could a simple change to the learned update help? We start with the simplest operation possible: simply merging the SFT model back toward the original post-trained
     model, \(\theta_{\mathrm{merge}} = (1 - \lambda)\theta_{\mathrm{post}} + \lambda\theta'_{\mathrm{post}}\),
     makes SFT a strong baseline for continual learning. Specifically, without merging, neither SFT nor OPSD beats the
     post-trained model, and SFT is much worse in terms of old-task performance. With merging, SFT generalizes much better, and OPSD loses its edge
@@ -111,7 +109,7 @@
 </section>
 
 <section id="grafting">
-  <h2>3.&nbsp;&nbsp;Grafting</h2>
+  <h2>3.&nbsp;&nbsp;From model merging to grafting</h2>
   <p>
     We see that model merging largely mitigates forgetting of existing capabilities,
     but why does forgetting happen in the first place? Can we make model merging even better?
@@ -160,7 +158,7 @@
   </p>
   <h3 id="donor">Which donor model?</h3>
   <p>
-    We want a donor that is early enough to see less interference, but late enough to stay
+    We want a donor that is early enough to cause less forgetting, but late enough to stay
     close to the final model. OLMo-3 releases many intermediate checkpoints, which lets us
     study this. Each post-training stage (SFT, DPO, RL) makes the model harder to finetune,
     and the best donor sits before the end of pretraining.
@@ -195,9 +193,10 @@
   <h3 id="math-results">4.1&nbsp;&nbsp;Math</h3>
   <p>
     For math, we want the model to learn to solve hard problems while preserving its
-    existing reasoning capabilities. We study two sources of thinking traces: expert
+    existing reasoning capabilities. Here, retaining old capabilities means maintaining performance on easier math problems while learning harder ones.
+    We study two sources of thinking traces: (1) expert
     traces from a stronger model, which may differ substantially from the student's
-    behavior, and pedagogical traces designed to be easier for the student to learn from.
+    behavior, and (2) synthetic traces generated by the model itself based on the reference solution without thinking traces.
   </p>
   <p>
     <strong>Distillation from expert traces.</strong> On hard problems the model
@@ -251,8 +250,8 @@
 
   <h3 id="knowledge-results">4.2&nbsp;&nbsp;Knowledge injection</h3>
   <p>
-    For <strong>knowledge injection</strong>, we study facts absent from pretraining training,
-    such as new facts that emerge after the pretraining cutoff. We use invented entities so
+    Models at deployment need to learn new facts as the world or environment changes while retaining their existing reasoning abilities.
+    To study this, we try to inject new facts that emerge after the pretraining cutoff into the model. We use invented entities so
     that no fact can leak from pretraining, and the question-answer form is far from how a
     reasoning model writes. We therefore expect this to be a particularly demanding
     test of retaining its math capabilities.
@@ -272,17 +271,12 @@
 </section>
 
 <section id="takeaways">
-  <h2>5.&nbsp;&nbsp;Making off-policy learning work</h2>
+  <h2>5.&nbsp;&nbsp;Continual learning through better optimization</h2>
   <p>
-    Off-policy data are a natural part of continual learning. When direct SFT fails,
-    converting these data into on-policy signals is a natural approach. However, our results demonstrate
-    that the failure of direct SFT is not due to off-policyness: simple modifications to
-    off-policy weight updates can be more effective both for acquiring new capabilities
-    and preserving prior behavior than current on-policy methods, while inheriting the efficiency of off-policy training.
+    Continual learning requires models to acquire new knowledge and skills while preserving existing capabilities. Converting available data into on-policy signals is one approach, but our results show that changing the weight update can make off-policy learning substantially more effective. Even traces designed to be easier to learn from, such as those produced by Pedagogical RL, benefit from a better update rule.
   </p>
   <p>
-    We hope this inspires more work re-assessing and expanding the limits of off-policy learning, rather than
-    treating it as a fundamental obstacle to bypass.
+    These results motivate more work on how new information is incorporated into a model's parameters. Alongside efforts to making data easier to learn from, we should develop optimization and update rules that let models learn from the data available to them.
   </p>
 </section>
 
